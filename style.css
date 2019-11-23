@@ -70,7 +70,11 @@ body {
 }
 */
 .row {
-    padding-top: 50px;
+    padding-top: 10px;
+}
+
+.secondRowSlider {
+    padding: 50px 0 15px 0;
 }
 
 #subtitle {
