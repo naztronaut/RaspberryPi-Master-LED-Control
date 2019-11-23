@@ -185,6 +185,9 @@ $(document).ready(function() {
                     wSlider.noUiSlider.set(Math.floor((result.white / 255) * 100));
                 }
             },
+            complete: () => {
+                $('.spinner-parent').hide();
+            },
         });
     }
 
