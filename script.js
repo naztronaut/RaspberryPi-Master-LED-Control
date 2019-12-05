@@ -2,13 +2,13 @@ let config = {
     url: 'http://192.168.1.225',
     multi: true,
     kitchenRight: 'http://192.168.1.169',
-    kitchenLeft: 'http://192.168.1.167' // Optional - only required if `multi` is true
+    kitchenLeft: 'http://192.168.1.235' // Optional - only required if `multi` is true
 };
 
 let globalStatus = 0;
 let currentColors = {};
 let rgbBrightnessChange = false;
-
+let kitchenLeftButtonStatus = 0;
 $(document).ready(function() {
     // Cache buster added because caching was a big problem on mobile
     let cacheBuster = new Date().getTime();
@@ -191,6 +191,8 @@ $(document).ready(function() {
         });
     }
 
+    // Kitchen Lights Start
+
     if(config.multi) {
         $("#multi").show();
     }
@@ -210,11 +212,13 @@ $(document).ready(function() {
 
     if(config.multi) {
         $.ajax({
-            url: config.kitchenLeft + '/kitchenLights/led/status.txt?' + cacheBuster, //kitchen right
+            url: config.kitchenLeft + '/gpio/status?' + cacheBuster, //kitchen left
             method: 'GET',
             dataType: 'text',
             cache: false,
             success: function (result) {
+                kitchenLeftButtonStatus = result;
+                console.log(result);
                 singleButton('Left', result);
             }
         });
@@ -245,7 +249,7 @@ $(document).ready(function() {
         if(config.multi) {
             //left
             $.ajax({
-                url: config.kitchenLeft + '/api/kitchen?status=' + state, //kitchen right
+                url: config.kitchenLeft + '/gpio/' + ((state == "on") ? 1 : 0), //kitchen left
                 method: 'GET',
                 dataType: 'text',
                 success: function (result) {
@@ -279,22 +283,40 @@ $(document).ready(function() {
         $('.single').on('click', function (e) {
             let side;
             let url;
+            let changeTo;
+
             if($(e.target).data('side') == 'Left') {
+                if(kitchenLeftButtonStatus == 1) {
+                    changeTo = 0;
+                } else {
+                    changeTo = 1;
+                }
                 side = 'Left';
                 url = config.kitchenLeft;
+                $.ajax({
+                url: url + '/gpio/' + changeTo,
+                method: 'GET',
+                dataType: 'text',
+                cache: false,
+                success: function (res) {
+                    singleButton(side, changeTo);
+                    kitchenLeftButtonStatus = res;
+                }
+            });
             } else {
                 side = 'Right';
                 url = config.kitchenRight;
-            }
-            $.ajax({
-                url: url + '/api/kitchen/toggle?' + cacheBuster, //kitchen right
-                method: 'GET',
-                dataType: 'json',
-                cache: false,
-                success: function (result) {
-                    singleButton(side, result.status);
+                $.ajax({
+                    url: url + '/api/kitchen/toggle?' + cacheBuster, //kitchen right
+                    method: 'GET',
+                    dataType: 'json',
+                    cache: false,
+                    success: function (result) {
+                        singleButton(side, result.status);
                 }
             });
+            }
+
             e.preventDefault();
         });
 
